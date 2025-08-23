@@ -1,0 +1,36 @@
+name: Website Monitor
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # 5분마다 실행
+  workflow_dispatch:         # 수동 실행도 가능
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run monitor script
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: python check_site.py
+
+      - name: Commit last alert timestamp
+        run: |
+          if [[ -f last_alert.txt ]]; then
+            git config user.name "github-actions"
+            git config user.email "actions@github.com"
+            git add last_alert.txt
+            git commit -m "Update last alert timestamp" || echo "No changes"
+            git push
+          fi
