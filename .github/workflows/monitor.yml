@@ -2,15 +2,24 @@ name: Website Monitor
 
 on:
   schedule:
-    - cron: "*/20 * * * *"   # 20분마다 실행
-  workflow_dispatch:         # 수동 실행도 가능
+    - cron: "*/20 * * * *"   
+  workflow_dispatch:         
 
 jobs:
   monitor:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4  # v4로 업데이트
+
+      # 🔥 캐시 복원 추가
+      - name: Cache alert file
+        uses: actions/cache@v4
+        with:
+          path: last_alert.txt
+          key: health-check-alert-${{ github.run_id }}
+          restore-keys: |
+            health-check-alert-
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -25,12 +34,4 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: python check_site.py
 
-      - name: Commit last alert timestamp
-        run: |
-          if [[ -f last_alert.txt ]]; then
-            git config user.name "github-actions"
-            git config user.email "actions@github.com"
-            git add last_alert.txt
-            git commit -m "Update last alert timestamp" || echo "No changes"
-            git push
-          fi
+      # ❌ Commit 부분 완전 삭제됨!
